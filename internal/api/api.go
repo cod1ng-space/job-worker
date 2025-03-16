@@ -44,6 +44,33 @@ func (h *Handler) PostJob(c echo.Context) error {
 	return c.String(http.StatusOK, strconv.Itoa(id))
 }
 
+func (h *Handler) PutJob(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.String(http.StatusBadRequest, "Некорректный id задачи")
+	}
+
+	input := struct {
+		Name     *string `json:"name"`
+		Priority *int    `json:"priority"`
+	}{}
+
+	if err := c.Bind(&input); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	if input.Name == nil || input.Priority == nil {
+		return c.String(http.StatusBadRequest, "Отсутствует хотя бы одно поле!")
+	}
+
+	status, err := h.JW.AddOrUpdateJob(id, *input.Name, *input.Priority)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.String(http.StatusOK, status)
+}
+
 func (h *Handler) GetJob(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -51,7 +78,7 @@ func (h *Handler) GetJob(c echo.Context) error {
 	}
 	status, ok := h.JW.StatusMap[id]
 	if !ok {
-		return c.String(http.StatusBadRequest, "Нет задачи с таким номером!")
+		return c.String(http.StatusNotFound, "Нет задачи с таким номером!")
 	}
 	return c.String(http.StatusOK, status)
 }

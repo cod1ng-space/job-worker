@@ -158,7 +158,7 @@ func (w *JobWorker) PerformJobWithTimeout(ctx context.Context, job Job) error {
 }
 
 func (w *JobWorker) PerformJob(job Job) error {
-	log.Printf("Работа %s начата в %s\n", job.Name, time.Now().Format("2006-01-02 15:04:05"))
+	log.Printf("Работа %s начата в %s\n", job.Name, time.Now().Format("2006/01/02 15:04:05"))
 
 	// Имитация выполнения работы; max = 3s
 	<-time.After(time.Duration(rand.Int63n(int64(3 * time.Second))))
@@ -168,7 +168,7 @@ func (w *JobWorker) PerformJob(job Job) error {
 		return errors.New(fmt.Sprintf("Ошибка в выполнении %s", job.Name))
 	}
 
-	log.Printf("Выполнена работа %s в %s\n", job.Name, time.Now().Format("2006-01-02 15:04:05"))
+	log.Printf("Выполнена работа %s в %s\n", job.Name, time.Now().Format("2006/01/02 15:04:05"))
 	return nil
 }
 
@@ -199,4 +199,41 @@ func (w *JobWorker) AddJob(name string, priority int) (id int, err error) {
 	w.StatusMap[id] = "Ожидает в очереди"
 
 	return id, nil
+}
+
+func (w *JobWorker) AddOrUpdateJob(id int, name string, priority int) (status string, err error) {
+	w.Mu.Lock()
+	defer w.Mu.Unlock()
+
+	newQueue := priorityqueue.NewWith(w.Queue.Comparator)
+	flag := false
+
+	// Можно полностью создать новую очередь, так как есть ограничение по ТЗ на количество задач в минуту
+	for _, item := range w.Queue.Values() {
+		job := item.(Job)
+		if job.Id != id {
+			newQueue.Enqueue(job)
+		} else {
+			flag = true
+		}
+	}
+
+	newJob := Job{
+		Name:     name,
+		Priority: priority,
+		Id:       id,
+	}
+	newQueue.Enqueue(newJob)
+
+	w.Queue = *newQueue
+	w.StatusMap[id] = "Ожидает в очереди"
+	w.notifyChan <- struct{}{}
+
+	if flag {
+		status = "Параметры задачи обновлены"
+	} else {
+		status = "Задача добавлена"
+	}
+
+	return status, nil
 }

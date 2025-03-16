@@ -24,8 +24,9 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Recover())
 
-	e.POST("/jobs", h.PostJob)
-	e.GET("/jobs/:id", h.GetJob)
+	e.POST("/jobs", h.PostJob)   // Создание задачи
+	e.PUT("/jobs/:id", h.PutJob) // Создание или обновление задачи
+	e.GET("/jobs/:id", h.GetJob) // Получение информации о статусе задачи
 
 	log.Printf("Сервер запущен на порту %d\n", *port)
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", *port)))
