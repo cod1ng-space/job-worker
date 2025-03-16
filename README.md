@@ -21,6 +21,17 @@ docker run -d -p 8080:8080 --name my-worker job-worker
 -retrues | Количество повторных попыток | 3
 -timeout | Ограничение времени на выполнение одной задачи(таймаут) | 3
 
+Пример запуска с параметрами
+```
+docker run -d -p 8080:8081 \
+  --name custom-worker \
+  job-worker \
+  --port=8081 \
+  --workers_count=10 \
+  --retries=5 \
+  --timeout=5
+```
+
 ## Посмотреть логи
 ```
 docker logs -f my-worker

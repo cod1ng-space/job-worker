@@ -9,4 +9,5 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /job-worker ./cmd/main.go
 FROM alpine:3.18
 COPY --from=builder /job-worker /job-worker
 EXPOSE 8080
-CMD ["/job-worker"]
+ENTRYPOINT ["./job-worker"]
+CMD ["--workers_count=5", "--port=8080", "--retries=3", "--timeout=3"]
